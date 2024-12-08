@@ -1,0 +1,111 @@
+[
+    {
+        "id": 41,
+        "name": "John",
+        "surname": "Doe",
+        "email": "john.doe@example.com",
+        "projects": [
+            {
+                "id": 43,
+                "name": "Project 1",
+                "description": "This is the first project",
+                "tasks": [
+                    {
+                        "id": 47,
+                        "name": "Task 1",
+                        "description": "This is the first task",
+                        "status": "Not Started",
+                        "_type": "DevTask",
+                        "priority": 4,
+                        "language": "Python"
+                    }
+                ],
+                "deadline": "2024-12-31"
+            },
+            {
+                "id": 45,
+                "name": "Project 3",
+                "description": "This is the third project",
+                "tasks": [
+                    {
+                        "id": 49,
+                        "name": "Task 3",
+                        "description": "This is the third task",
+                        "status": "Not Started",
+                        "_type": "DocTask",
+                        "priority": 1,
+                        "document": "Markdown"
+                    }
+                ],
+                "deadline": "2024-10-31"
+            }
+        ]
+    },
+    {
+        "id": 42,
+        "name": "Alice",
+        "surname": "Doe",
+        "email": "alice.doe@example.com",
+        "projects": [
+            {
+                "id": 46,
+                "name": "Project 4",
+                "description": "This is the fourth project",
+                "tasks": [
+                    {
+                        "id": 50,
+                        "name": "Task 4",
+                        "description": "This is the fourth task",
+                        "status": "Not Started",
+                        "_type": "DevTask",
+                        "priority": 2,
+                        "language": "Java"
+                    }
+                ],
+                "deadline": "2025-01-31"
+            },
+            {
+                "id": 44,
+                "name": "Project 2",
+                "description": "This is the second project",
+                "tasks": [
+                    {
+                        "id": 48,
+                        "name": "Task 2",
+                        "description": "This is the second task",
+                        "status": "Not Started",
+                        "_type": "QATask",
+                        "priority": 2,
+                        "test_type": "Smoke testing"
+                    }
+                ],
+                "deadline": "2024-11-30"
+            }
+        ]
+    },
+    {
+        "id": 43,
+        "name": "Alexandru",
+        "surname": "Dragos",
+        "email": "alex.dragos@email.com",
+        "projects": [
+            {
+                "id": 47,
+                "name": "Test Project",
+                "description": "This project tests the entire app",
+                "tasks": [
+                    {
+                        "id": 44,
+                        "name": "Unit Tests for Module",
+                        "description": "Write Unit Tests for module /shop/",
+                        "status": "In Progress",
+                        "_type": "QATask",
+                        "priority": 2,
+                        "test_type": "Automated"
+                    }
+                ],
+                "deadline": "2025-01-07"
+            }
+        ]
+    }
+]
