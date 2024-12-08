@@ -1,95 +1,92 @@
-from typing import Set
-from task import DevTask, QATask, DocTask
+import os
+from typing import Set, Optional, Dict, Any
 from datetime import datetime, timedelta
-
+from id_manager import IDManager
 import json
 
 
 class Project:
-    def __init__(self, id, name, description, tasks=None, deadline=None):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.tasks = set()
+    def __init__(
+        self,
+        id: Optional[int],
+        name: str,
+        description: str,
+        tasks: Optional[Set["Task"]] = None,
+        deadline: Optional[str | datetime] = None
+    ):
+        self.id: int = IDManager.get_new_project_id() if id is None else id
+        self.name: str = name
+        self.description: str = description
+        self.tasks: Set["Task"] = tasks or set()
 
-        # all the tasks belonging to the project
-        if tasks is not None:
-            """
-            might be the case when the project is loaded from the disk, the tasks are not 
-            yet deserialized, but it is a dictionary
-            """
-            for task in tasks:
-                task_type = task.pop('_type', None)
-                if isinstance(task, dict) and task_type == 'DevTask':
-                    task = DevTask(**task)
-                elif isinstance(task, dict) and task_type == 'QATask':
-                    task = QATask(**task)
-                elif isinstance(task, dict) and task_type == 'DocTask':
-                    task = DocTask(**task)
-                else:
-                    raise ValueError(f'Unknown task type: {task}')
-                self.tasks.add(task)
+        # Handle deadline
+        self.deadline: Optional[datetime] = self._parse_deadline(deadline)
+
+    @staticmethod
+    def _parse_deadline(deadline: Optional[str | datetime]) -> Optional[datetime]:
+        if isinstance(deadline, str) and deadline.strip():
+            return datetime.fromisoformat(deadline)
+        elif isinstance(deadline, datetime):
+            return deadline
         else:
-            self.tasks = set()
+            return datetime.now() + timedelta(days=30)  # Default to 30 days from now
 
-        # when the project should be completed
-        if deadline is not None:
-            self.deadline = (
-                datetime.fromisoformat(deadline) if isinstance(deadline, str) else deadline
-            )
-        else:
-            # by default add a date 30 days from now
-            self.deadline = (
-                datetime.fromisoformat(deadline) if isinstance(deadline, str) else deadline
-            )
+    def add_task(self, task: "Task") -> None:
+        self.tasks.add(task)
 
-    def __eq__(self, other):
+    def remove_task(self, task: "Task") -> None:
+        self.tasks.discard(task)
+
+    def set_deadline(self, deadline: str | datetime) -> None:
+        self.deadline = self._parse_deadline(deadline)
+
+    def update_project(self, name: Optional[str] = None, description: Optional[str] = None, deadline: Optional[str | datetime] = None) -> None:
+        if name:
+            self.name = name
+        if description:
+            self.description = description
+        if deadline:
+            self.set_deadline(deadline)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "tasks": [task.to_dict() for task in self.tasks],
+            "deadline": self.deadline.strftime('%Y-%m-%d') if self.deadline else None
+        }
+
+    def describe(self) -> str:
+        return f"{self.id}. {self.name} - {self.description} - {self.deadline} - {len(self.tasks)} tasks"
+
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Project):
             return False
         return self.name == other.name and self.description == other.description
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.name, self.description))
 
-    def add_task(self, task):
-        self.tasks.add(task)
+    def __str__(self) -> str:
+        return f"{self.id}. {self.name} - {self.description}"
 
-    def __str__(self):
-        return f'{self.name} - {self.description}'
-
-    def __repr__(self):
-        return f'{self.name} - {self.description}'
-
-    def set_deadline(self, deadline):
-        self.deadline = deadline
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'tasks': [task.to_dict() for task in self.tasks],
-            'deadline': self.deadline.strftime('%Y-%m-%d') if isinstance(self.deadline, datetime) else self.deadline
-        }
-
-    def describe(self):
-        return f'{self.name} - {self.description} - {self.deadline} - {self.tasks}'
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class ProjectEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, Project):
-            return obj.__dict__
-        return json.JSONEncoder.default(self, obj)
+            return obj.to_dict()
+        return super().default(obj)
 
 
 class Projects:
     """
     Class to manage projects
     """
-
-    # all the classes see the same set of projects
-    projects = set()
+    projects: Set[Project] = set()
 
     @classmethod
     def add_project(cls, project: Project) -> None:
@@ -97,8 +94,27 @@ class Projects:
 
     @classmethod
     def remove_project(cls, project: Project) -> None:
-        cls.projects.remove(project)
+        cls.projects.discard(project)  # use discard to avoid KeyError if project does not exist
 
     @classmethod
     def get_projects(cls) -> Set[Project]:
         return cls.projects
+
+    @classmethod
+    def save_to_file(cls, filename: str = "data/projects.json") -> None:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w') as file:
+            json.dump([project.to_dict() for project in cls.projects], file, cls=ProjectEncoder, indent=4)
+
+    @classmethod
+    def load_from_file(cls, filename: str = "data/projects.json") -> None:
+        if not os.path.exists(filename):
+            print(f"File not found: {filename}. No projects loaded.")
+            return
+
+        with open(filename, 'r') as file:
+            try:
+                data = json.load(file)
+                cls.projects = {Project(**proj) for proj in data}
+            except json.JSONDecodeError:
+                print(f"Invalid JSON in file: {filename}. No projects loaded.")
